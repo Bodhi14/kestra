@@ -46,6 +46,7 @@ public final class ScriptService {
     public static final String ENV_WORKING_DIR = "WORKING_DIR";
     public static final String ENV_OUTPUT_DIR = "OUTPUT_DIR";
     public static final String ENV_BUCKET_PATH = "BUCKET_PATH";
+    public static final String ENV_CHECKPOINT_PREFIX = "CHECKPOINT_";
 
     private ScriptService() {
     }

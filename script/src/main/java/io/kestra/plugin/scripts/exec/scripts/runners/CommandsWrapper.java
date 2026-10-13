@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.SystemUtils;
 
@@ -90,6 +91,7 @@ public class CommandsWrapper implements TaskCommands {
     @With
     @Deprecated
     private Boolean warningOnStdErr;
+
     @With
     private NamespaceFiles namespaceFiles;
 
@@ -113,6 +115,9 @@ public class CommandsWrapper implements TaskCommands {
 
     @With
     private boolean executionContext;
+
+    @With
+    private boolean durable;
 
     public CommandsWrapper(RunContext runContext) {
         this.runContext = runContext;
@@ -147,7 +152,8 @@ public class CommandsWrapper implements TaskCommands {
             timeout,
             targetOS,
             kotlp,
-            executionContext
+            executionContext,
+            durable
         );
     }
 
@@ -180,12 +186,19 @@ public class CommandsWrapper implements TaskCommands {
         Map<String, Object> variables = new TreeMap<>(runContext.getVariables());
         EXECUTION_CONTEXT_EXCLUDED_VARIABLES.forEach(variables::remove);
 
+        // load existing checkpoints if durable is enabled
+        if (durable) {
+            var checkpointVars = runContext.checkpoint().list().stream().collect(Collectors.toMap(io.kestra.core.checkpoint.Checkpoint::key, io.kestra.core.checkpoint.Checkpoint::value));
+            variables.put("checkpoint", checkpointVars);
+        }
+
         Files.write(
             this.workingDirectory.resolve(WorkingDir.EXECUTION_CONTEXT_FILE_NAME),
             JacksonMapper.ofJson().writeValueAsBytes(variables)
         );
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends TaskRunnerDetailResult> ScriptOutput run() throws Exception {
         if (this.namespaceFiles != null && !Boolean.FALSE.equals(runContext.render(this.namespaceFiles.getEnabled()).as(Boolean.class).orElse(true))) {
             NamespaceFilesUtils.loadNamespaceFiles(runContext, this.namespaceFiles);
@@ -270,7 +283,7 @@ public class CommandsWrapper implements TaskCommands {
 
         this.commands = Property.ofValue(finalCommands);
 
-        ScriptOutput.ScriptOutputBuilder scriptOutputBuilder = ScriptOutput.builder();
+        ScriptOutput.ScriptOutputBuilder<?, ?> scriptOutputBuilder = ScriptOutput.builder();
 
         try {
             TaskRunnerResult<T> taskRunnerResult = (TaskRunnerResult<T>) taskRunner.run(taskRunnerRunContext, this, this.outputFiles);

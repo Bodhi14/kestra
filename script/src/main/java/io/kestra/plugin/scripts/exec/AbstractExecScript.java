@@ -128,6 +128,13 @@ public abstract class AbstractExecScript extends Task implements NamespaceFilesI
     @NotNull
     protected Property<TargetOS> targetOS = Property.ofValue(TargetOS.AUTO);
 
+    @Builder.Default
+    @Schema(
+        title = "Enable durable features.",
+        description = "If set to `true` you will be able to use checkpointing for in-task recovery points."
+    )
+    protected Property<Boolean> durable = Property.ofValue(false);
+
     @Schema(
         title = "The task runner container image, only used if the task runner is container-based."
     )
@@ -176,7 +183,8 @@ public abstract class AbstractExecScript extends Task implements NamespaceFilesI
             .withTimeout(runContext.render(this.getTimeout()).as(Duration.class).orElse(null))
             .withTargetOS(runContext.render(this.getTargetOS()).as(TargetOS.class).orElseThrow())
             .withFailFast(runContext.render(this.getFailFast()).as(Boolean.class).orElse(false))
-            .withExecutionContext(runContext.render(this.getExecutionContext()).as(Boolean.class).orElse(false));
+            .withExecutionContext(runContext.render(this.getExecutionContext()).as(Boolean.class).orElse(false))
+            .withDurable(runContext.render(this.getDurable()).as(Boolean.class).orElse(false));
     }
 
     /**
@@ -204,7 +212,7 @@ public abstract class AbstractExecScript extends Task implements NamespaceFilesI
 
     /**
      * Gets the list of additional commands to be used for defining interpreter errors handling.
-     * 
+     *
      * @return list of commands;
      */
     protected List<String> getExitOnErrorCommands(RunContext runContext) throws IllegalVariableEvaluationException {

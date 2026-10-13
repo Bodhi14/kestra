@@ -1,10 +1,12 @@
 package io.kestra.core.models.tasks.runners;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.SystemUtils;
 
@@ -83,6 +85,12 @@ public abstract class TaskRunner<T extends TaskRunnerDetailResult> implements Pl
                 this.additionalVars.putAll(runContext.render(taskCommands.getAdditionalVars()));
             }
 
+            // load existing checkpoints if durable is enabled
+            if (taskCommands.isDurable()) {
+                var checkpointVars = runContext.checkpoint().list().stream().collect(Collectors.toMap(io.kestra.core.checkpoint.Checkpoint::key, io.kestra.core.checkpoint.Checkpoint::value));
+                this.additionalVars.put("checkpoints", checkpointVars);
+            }
+
             this.additionalVars.putAll(runContext.render(this.runnerAdditionalVars(runContext, taskCommands)));
         }
 
@@ -111,6 +119,11 @@ public abstract class TaskRunner<T extends TaskRunnerDetailResult> implements Pl
             }
             if (additionalVars.containsKey(ScriptService.VAR_BUCKET_PATH)) {
                 this.env.put(ScriptService.ENV_BUCKET_PATH, additionalVars.get(ScriptService.VAR_BUCKET_PATH).toString());
+            }
+
+            // load existing checkpoints if durable is enabled
+            if (taskCommands.isDurable()) {
+                runContext.checkpoint().list().forEach(it ->this.env.put(ScriptService.ENV_CHECKPOINT_PREFIX + it.key().toUpperCase(), it.value()));
             }
 
             this.env.putAll(runContext.renderMap(this.runnerEnv(runContext, taskCommands)));
