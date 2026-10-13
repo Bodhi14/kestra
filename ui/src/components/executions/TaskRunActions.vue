@@ -171,7 +171,6 @@
 
     import * as Utils from "../../utils/utils"
     import {findTaskById, LOOP_TASK_TYPE} from "../../utils/flowUtils"
-    import {loopIterationsRoute} from "../../utils/executionUtils"
     import {useToast} from "../../utils/toast"
     import {handledIf} from "../../utils/kestraHttp"
     import resource from "../../models/resource"
@@ -277,7 +276,7 @@
     )
 
     function openIterations() {
-        router.push(loopIterationsRoute(props.execution.id, props.taskRun.taskId))
+        router.push(loopIterationsRoute(props.execution, props.taskRun.taskId))
     }
 
     function downloadNameFor(currentTaskRunId: string): string {
