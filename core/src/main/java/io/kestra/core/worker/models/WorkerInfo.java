@@ -1,26 +1,18 @@
 package io.kestra.core.worker.models;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
-
-import io.kestra.core.runners.Worker;
+import io.kestra.core.utils.IdUtils;
 
 import io.micronaut.context.annotation.Context;
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
 
 /**
  * Provides information about the current worker.
+ * <p>
+ * Owns the worker id rather than reading it from the worker, since plugins are synchronized under this id before the worker's dependencies can be built.
  */
 @Context
 public class WorkerInfo {
 
-    private final Supplier<String> workerId;
-
-    @Inject
-    public WorkerInfo(Provider<Worker> workerProvider) {
-        workerId = Suppliers.memoize(() -> workerProvider.get().getId());
-    }
+    private final String workerId = IdUtils.create();
 
     /**
      * The worker unique id.
@@ -28,6 +20,6 @@ public class WorkerInfo {
      * @return The worker id.
      */
     public String getWorkerId() {
-        return workerId.get();
+        return workerId;
     }
 }
